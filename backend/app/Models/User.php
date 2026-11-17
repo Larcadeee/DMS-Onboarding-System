@@ -54,4 +54,42 @@ class User extends Authenticatable
     {
         return $this->hasOne(Trainee::class);
     }
+
+    public function hasRole(string ...$roles): bool
+    {
+        return $this->role && in_array($this->role->name, $roles, true);
+    }
+
+    public function hasAnyRole(array $roles): bool
+    {
+        return $this->role && in_array($this->role->name, $roles, true);
+    }
+
+    public function hasPermission(string ...$permissions): bool
+    {
+        if (! $this->role) {
+            return false;
+        }
+
+        $userPermissions = $this->role->permissions->pluck('name')->toArray();
+
+        foreach ($permissions as $permission) {
+            if (in_array($permission, $userPermissions, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function hasAllPermissions(array $permissions): bool
+    {
+        if (! $this->role) {
+            return false;
+        }
+
+        $userPermissions = $this->role->permissions->pluck('name')->toArray();
+
+        return empty(array_diff($permissions, $userPermissions));
+    }
 }

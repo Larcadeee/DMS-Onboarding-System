@@ -1,8 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
-if (!API_URL) {
-  throw new Error("NEXT_PUBLIC_API_URL is not set. Check frontend/.env.local.");
-}
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 export interface ApiSuccess<T> {
   success: true;
@@ -76,7 +72,48 @@ export async function apiRequest<T>(
 }
 
 export async function ensureCsrfCookie(): Promise<void> {
-  await fetch(`${API_URL}/sanctum/csrf-cookie`, {
-    credentials: "include",
+  await apiRequest("/api/sanctum/csrf-cookie");
+}
+
+export interface LoginResponse {
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    employee_number: string | null;
+    is_active: boolean;
+    last_login_at: string | null;
+    role: {
+      id: number;
+      name: string;
+      label: string;
+      description: string | null;
+      permissions: string[];
+    } | null;
+    department: {
+      id: number;
+      name: string;
+      code: string;
+    } | null;
+  };
+}
+
+export async function login(email: string, password: string, remember = false): Promise<LoginResponse> {
+  await ensureCsrfCookie();
+
+  const response = await apiRequest<LoginResponse["user"]>("/api/v1/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password, remember }),
   });
+
+  return { user: response.data };
+}
+
+export async function logout(): Promise<void> {
+  await apiRequest("/api/v1/auth/logout", { method: "POST" });
+}
+
+export async function getUser(): Promise<LoginResponse> {
+  const response = await apiRequest<LoginResponse["user"]>("/api/v1/auth/user");
+  return { user: response.data };
 }
