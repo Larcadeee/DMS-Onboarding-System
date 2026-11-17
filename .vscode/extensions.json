@@ -1,0 +1,10 @@
+{
+  "recommendations": [
+    "bmewburn.vscode-intelephense-client",
+    "bradlc.vscode-tailwindcss",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "editorconfig.editorconfig",
+    "cweijan.vscode-database-client2"
+  ]
+}
