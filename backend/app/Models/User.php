@@ -56,62 +56,41 @@ class User extends Authenticatable
         return $this->hasOne(Trainee::class);
     }
 
-    /**
-     * Determine whether the user has any of the given role names.
-     */
     public function hasRole(string ...$roles): bool
     {
-        return $this->role !== null && in_array($this->role->name, $roles, true);
+        return $this->role && in_array($this->role->name, $roles, true);
     }
 
-    /**
-     * Determine whether the user's role grants ALL of the given permission names.
-     * System administrators hold every permission implicitly.
-     */
+    public function hasAnyRole(array $roles): bool
+    {
+        return $this->role && in_array($this->role->name, $roles, true);
+    }
+
     public function hasPermission(string ...$permissions): bool
     {
-        if ($permissions === []) {
-            return true;
-        }
-
-        if ($this->hasRole('super_admin')) {
-            return true;
-        }
-
-        $granted = $this->permissionNames();
-
-        return collect($permissions)->every(
-            fn (string $permission) => $granted->contains($permission)
-        );
-    }
-
-    /**
-     * Determine whether the user's role grants ANY of the given permission names.
-     */
-    public function hasAnyPermission(string ...$permissions): bool
-    {
-        if ($permissions === []) {
+        if (! $this->role) {
             return false;
         }
 
-        if ($this->hasRole('super_admin')) {
-            return true;
+        $userPermissions = $this->role->permissions->pluck('name')->toArray();
+
+        foreach ($permissions as $permission) {
+            if (in_array($permission, $userPermissions, true)) {
+                return true;
+            }
         }
 
-        return $this->permissionNames()
-            ->intersect($permissions)
-            ->isNotEmpty();
+        return false;
     }
 
-    /**
-     * Names of every permission granted through the user's role.
-     */
-    public function permissionNames(): Collection
+    public function hasAllPermissions(array $permissions): bool
     {
-        if ($this->role === null) {
-            return collect();
+        if (! $this->role) {
+            return false;
         }
 
-        return $this->role->permissions->pluck('name');
+        $userPermissions = $this->role->permissions->pluck('name')->toArray();
+
+        return empty(array_diff($permissions, $userPermissions));
     }
 }
